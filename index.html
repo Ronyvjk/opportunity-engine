@@ -155,7 +155,7 @@
       </div>
     </div>
     <div class="notice">
-      <strong>How daily updates actually work:</strong> a static page can't reach into Reddit/X/LinkedIn/GitHub on its own, and it can't write into this page's storage from the outside — there's no background process that can reach into your browser. What actually works: a scheduled daily research pass (if you've turned one on) produces a batch of new, sanity-checked opportunities as copy-paste-ready data. Paste that into <b>Import batch</b> below and it's added — never overwriting or deleting anything already here. Everything is kept permanently; archiving (not deleting) is the only way an item leaves the active view.
+      <strong>This is now a genuinely shared, live site:</strong> everyone who opens this link reads from the same database. When new opportunities are added — by you, via Import batch, or by a friend — they appear for everyone the next time the page loads. Anyone with this link can also add or edit entries (there's no login system), so treat the link as shared-editable, not private.
     </div>
   </header>
 
@@ -213,7 +213,7 @@
     <div id="trendPanel"></div>
   </section>
 
-  <footer>DATA STORED LOCALLY TO THIS PAGE · VISIBLE ONLY TO YOU · NOT SYNCED TO ANY EXTERNAL FEED</footer>
+  <footer>DATA STORED IN A SHARED DATABASE · VISIBLE TO ANYONE WITH THIS LINK · EDITABLE BY ANYONE WITH THIS LINK (NO LOGIN)</footer>
 </div>
 
 <div class="overlay" id="overlay">
@@ -288,6 +288,25 @@
 
 <script>
 const STORAGE_KEY = 'opportunities-v2';
+const SUPABASE_URL = 'https://uzhivqavbwtrptdwbgud.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_pEH9o0RmRG04M8S7MpdZzw_rLrTVkJM';
+const REST = SUPABASE_URL + '/rest/v1/opportunities';
+const SB_HEADERS = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer '+SUPABASE_KEY, 'Content-Type':'application/json' };
+
+function toDbRow(o){
+  return {
+    id:o.id, domain:o.domain, title:o.title, plain:o.plain||'', why:o.why||'', who:o.who||'',
+    frequencytext:o.frequencyText||'', solutiontech:o.solutionTech||'',
+    solutionnontech:o.solutionNonTech||'', skills:o.skills||'', mvp:o.mvp||'',
+    whypursue:o.whyPursue||'', claudetake:o.claudeTake||'',
+    demand:o.demand||3, freqscore:o.freqscore||3, competition:o.competition||3, bizpotential:o.bizpotential||3,
+    aipotential:o.aipotential||3, buildease:o.buildease||3, launchspeed:o.launchspeed||3, solofit:o.solofit||3,
+    status:o.status||'New', source:o.source||'', sightings:o.sightings||1, date:o.date||Date.now(), notes:o.notes||''
+  };
+}
+function fromDbRow(r){
+  return { ...r, frequencyText:r.frequencytext, solutionTech:r.solutiontech, solutionNonTech:r.solutionnontech, whyPursue:r.whypursue, claudeTake:r.claudetake };
+}
 const DOMAIN_ORDER = ['AI','Healthcare','Education','Finance','Agriculture','Climate','Logistics','Manufacturing','Construction','Retail','Legal','Cybersecurity','GIS','Robotics','Gaming','Travel','Food','Real Estate','Energy','Social Impact','Productivity','Other'];
 const AXES = [
   {key:'demand', label:'Market demand', weight:2},
@@ -538,17 +557,29 @@ function populateDomainSelects(){
 
 async function loadOpps(){
   try{
-    const res = await window.storage.get(STORAGE_KEY, false);
-    opps = res && res.value ? JSON.parse(res.value) : null;
-  }catch(e){ opps = null; }
-  if(!opps || !opps.length){ opps = seedData; await persist(); }
+    const res = await fetch(REST+'?select=*', {headers:SB_HEADERS});
+    if(!res.ok) throw new Error('fetch failed: '+res.status);
+    const rows = await res.json();
+    opps = rows.map(fromDbRow);
+    if(!opps.length){ opps = seedData; await persist(); }
+  }catch(e){
+    console.error('Could not reach the shared database — showing local data only.', e);
+    opps = seedData;
+  }
   populateDomainSelects();
   populateDateFilter();
   render();
 }
 async function persist(){
-  try{ await window.storage.set(STORAGE_KEY, JSON.stringify(opps), false); }
-  catch(e){ console.error('Storage save failed', e); }
+  try{
+    const dbRows = opps.map(toDbRow);
+    const res = await fetch(REST, {
+      method:'POST',
+      headers:{...SB_HEADERS, 'Prefer':'resolution=merge-duplicates,return=minimal'},
+      body: JSON.stringify(dbRows)
+    });
+    if(!res.ok) console.error('Save to shared database failed', res.status, await res.text());
+  }catch(e){ console.error('Save to shared database failed', e); }
 }
 
 function scoreColor(score){ if(score>=71) return 'var(--rust)'; if(score>=41) return 'var(--amber)'; return 'var(--sage)'; }
