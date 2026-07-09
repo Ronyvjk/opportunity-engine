@@ -1,0 +1,32 @@
+flowchart TB
+    subgraph Client["Browser (index.html — HTML/CSS/vanilla JS, no build step)"]
+        UI["UI: search, filters, sort,\ndomain browser, day view"]
+        Form["Log/Edit modal\n(problem + fix + 8 rating axes)"]
+        Import["Batch import\n(paste JSON array)"]
+        Score["composite() scoring engine\n(8 weighted axes -> 0-100 rank)"]
+        Sanity["Sanity check pass\n(flags incomplete/odd entries)"]
+        Render["Render: Top Picks, Grid/List,\nDomain Frequency, Stats"]
+        Fallback["seedData[]\n(bundled offline fallback)"]
+    end
+
+    subgraph Supabase["Supabase (public project)"]
+        REST["Auto REST API\n/rest/v1/opportunities"]
+        DB[("Postgres table:\nopportunities")]
+    end
+
+    UI --> Render
+    Form --> Score
+    Import --> Score
+    Score --> Render
+    Render --> Sanity
+
+    Client -->|"GET on page load"| REST
+    Form -->|"POST new/edited row\n(merge-duplicates upsert)"| REST
+    Import -->|"POST batch rows"| REST
+    REST <--> DB
+
+    REST -.->|"request fails\n(offline/unreachable)"| Fallback
+    Fallback -.-> Render
+
+    note1["No auth: anon/public API key\nembedded in page.\nAnyone with the link can\nread and write all data."]
+    Supabase --- note1
