@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signal Desk — Opportunity Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#10201D; --bg-raise:#152722; --paper:#F6F1E4; --paper-dim:#EDE6D3;
+    --ink:#1B1B16; --ink-soft:#4A4A3E; --cream-text:#E9E4D6; --cream-dim:#A9B3AC;
+    --amber:#E8A33D; --sage:#6E9B8C; --rust:#C9622A; --line:#2A3D37; --line-paper:#DCD3B8;
+    --radius:2px;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--bg); color:var(--cream-text); font-family:'IBM Plex Sans', sans-serif; -webkit-font-smoothing:antialiased; }
+  ::selection{ background:var(--amber); color:var(--ink); }
+  button{ font-family:inherit; }
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible{ outline:2px solid var(--amber); outline-offset:2px; }
+  @media (prefers-reduced-motion: reduce){ *{ animation-duration:0.01ms !important; transition-duration:0.01ms !important; } }
+
+  .wrap{ max-width:1220px; margin:0 auto; padding:0 24px 90px; }
+
+  header.top{ border-bottom:1px solid var(--line); padding:28px 0 20px; margin-bottom:24px; }
+  .brandrow{ display:flex; align-items:baseline; justify-content:space-between; gap:24px; flex-wrap:wrap; }
+  .brand{ font-family:'Fraunces', serif; font-weight:700; font-size:clamp(26px, 4vw, 38px); letter-spacing:-0.01em; margin:0; display:flex; align-items:center; gap:12px; }
+  .brand .dot{ width:11px; height:11px; border-radius:50%; background:var(--amber); box-shadow:0 0 0 4px rgba(232,163,61,0.18); flex-shrink:0; }
+  .tagline{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--cream-dim); letter-spacing:0.06em; text-transform:uppercase; margin:6px 0 0 23px; }
+  .ticker{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--sage); text-align:right; line-height:1.7; }
+  .ticker b{ color:var(--amber); font-weight:600; }
+  .notice{ margin-top:20px; background:var(--bg-raise); border:1px solid var(--line); border-left:3px solid var(--amber); padding:14px 16px; font-size:13.5px; color:var(--cream-dim); line-height:1.55; border-radius:var(--radius); }
+  .notice strong{ color:var(--cream-text); }
+
+  .domain-browser{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:16px; background:var(--bg-raise); border:1px solid var(--line); padding:12px 14px; border-radius:var(--radius); }
+  .domain-browser label{ font-family:'IBM Plex Mono', monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--cream-dim); }
+  .domain-browser select{ background:var(--bg); border:1px solid var(--line); color:var(--cream-text); padding:8px 12px; border-radius:var(--radius); font-size:13.5px; flex:1; min-width:160px; }
+
+  .controls{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:20px; }
+  .controls input[type="text"], .controls select{ background:var(--bg-raise); border:1px solid var(--line); color:var(--cream-text); padding:9px 12px; border-radius:var(--radius); font-size:13.5px; }
+  .controls input[type="text"]{ flex:1; min-width:180px; }
+  .btn{ background:var(--amber); color:var(--ink); border:none; padding:10px 18px; border-radius:var(--radius); font-weight:600; font-size:13.5px; cursor:pointer; }
+  .btn:hover{ background:#f0b455; }
+  .btn.ghost{ background:transparent; color:var(--cream-text); border:1px solid var(--line); }
+  .btn.ghost:hover{ border-color:var(--sage); color:var(--sage); }
+  .btn.small{ padding:6px 12px; font-size:12px; }
+
+  .stats{ display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:1px; background:var(--line); border:1px solid var(--line); margin-bottom:28px; }
+  .stat{ background:var(--bg); padding:16px 18px; }
+  .stat .num{ font-family:'Fraunces', serif; font-size:28px; font-weight:600; color:var(--amber); line-height:1; }
+  .stat .lbl{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em; color:var(--cream-dim); margin-top:6px; }
+
+  section > h2{ font-family:'Fraunces', serif; font-size:20px; font-weight:600; margin:0 0 14px; display:flex; align-items:center; gap:10px; }
+  section > h2::before{ content:""; width:16px; height:1px; background:var(--amber); display:inline-block; }
+
+  .top-picks{ display:grid; grid-template-columns:repeat(auto-fit, minmax(300px,1fr)); gap:16px; margin-bottom:40px; }
+  .pick-card{ background:linear-gradient(160deg, var(--paper), var(--paper-dim)); border:1px solid var(--amber); border-radius:var(--radius); padding:16px 17px; }
+  .pick-card .rank{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--rust); text-transform:uppercase; letter-spacing:0.05em; }
+  .pick-card h3{ font-family:'Fraunces', serif; font-size:16.5px; margin:6px 0; color:var(--ink); }
+  .pick-card .why{ font-size:12.5px; color:var(--ink-soft); line-height:1.5; }
+
+  .domain-section{ margin-bottom:36px; }
+  .domain-head{ display:flex; align-items:baseline; gap:12px; margin-bottom:14px; }
+  .domain-head h2{ font-family:'Fraunces', serif; font-size:20px; font-weight:600; margin:0; }
+  .domain-head .count{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--cream-dim); }
+  .domain-head::after{ content:""; flex:1; height:1px; background:var(--line); }
+
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:16px; }
+
+  .card{ background:var(--paper); color:var(--ink); border-radius:var(--radius); padding:16px 17px; display:flex; flex-direction:column; gap:9px; border:1px solid var(--line-paper); }
+  .card-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+  .domain-tag{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:0.05em; background:var(--paper-dim); color:var(--ink-soft); padding:3px 8px; border-radius:12px; border:1px solid var(--line-paper); }
+  .gauge{ width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .gauge span{ font-family:'IBM Plex Mono', monospace; font-size:12px; font-weight:600; background:var(--paper); width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+  .card h3{ font-family:'Fraunces', serif; font-size:16.5px; font-weight:600; margin:0; line-height:1.3; }
+  .card .plain{ font-size:13px; line-height:1.5; margin:0; color:var(--ink-soft); }
+
+  .axis-strip{ display:flex; gap:6px; flex-wrap:wrap; }
+  .axis-chip{ font-family:'IBM Plex Mono', monospace; font-size:10px; background:var(--paper-dim); border:1px solid var(--line-paper); border-radius:10px; padding:2px 7px; color:var(--ink-soft); }
+  .axis-chip b{ color:var(--ink); }
+
+  details.brief{ border-top:1px dashed var(--line-paper); padding-top:8px; }
+  details.brief summary{ cursor:pointer; font-family:'IBM Plex Mono', monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--rust); list-style:none; }
+  details.brief summary::-webkit-details-marker{ display:none; }
+  details.brief summary::before{ content:"▸ "; }
+  details.brief[open] summary::before{ content:"▾ "; }
+  .brief-body{ margin-top:10px; display:flex; flex-direction:column; gap:9px; }
+  .brief-item b{ display:block; font-family:'IBM Plex Mono', monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-soft); margin-bottom:2px; }
+  .brief-item p{ margin:0; font-size:12.5px; line-height:1.5; color:var(--ink); }
+  .full-axes{ display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .full-axis-row{ font-size:11.5px; display:flex; justify-content:space-between; background:var(--paper-dim); padding:4px 8px; border-radius:var(--radius); }
+  .full-axis-row b{ font-family:'IBM Plex Mono', monospace; color:var(--amber); }
+  .claude-take{ background:var(--paper-dim); border-left:2px solid var(--sage); padding:8px 10px; font-size:12.5px; line-height:1.5; border-radius:var(--radius); }
+  .claude-take b{ color:var(--sage); font-family:'IBM Plex Mono', monospace; font-size:10.5px; text-transform:uppercase; display:block; margin-bottom:3px; }
+
+  .notes-toggle{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-soft); background:none; border:none; cursor:pointer; text-decoration:underline; padding:0; text-align:left; margin-top:4px; }
+  .notes-area{ display:none; width:100%; background:var(--paper-dim); border:1px solid var(--line-paper); border-radius:var(--radius); font-size:12.5px; padding:8px; color:var(--ink); resize:vertical; min-height:50px; margin-top:6px; }
+  .notes-area.open{ display:block; }
+
+  .card-foot{ display:flex; justify-content:space-between; align-items:center; margin-top:2px; gap:8px; flex-wrap:wrap; }
+  .status-select{ font-family:'IBM Plex Mono', monospace; font-size:11px; text-transform:uppercase; background:transparent; border:1px solid var(--line-paper); color:var(--ink-soft); padding:4px 8px; border-radius:var(--radius); }
+  .card-actions{ display:flex; gap:6px; }
+  .icon-btn{ background:none; border:none; cursor:pointer; color:var(--ink-soft); font-size:12px; padding:4px 6px; font-family:'IBM Plex Mono', monospace; }
+  .icon-btn:hover{ color:var(--rust); }
+  .sighting-btn{ font-family:'IBM Plex Mono', monospace; font-size:11px; background:var(--sage); color:var(--ink); border:none; padding:4px 9px; border-radius:12px; cursor:pointer; }
+  .empty{ grid-column:1 / -1; text-align:center; padding:36px 20px; color:var(--cream-dim); font-family:'IBM Plex Mono', monospace; font-size:13px; border:1px dashed var(--line); }
+
+  .trend-row{ display:flex; align-items:center; gap:12px; margin-bottom:10px; font-size:13px; }
+  .trend-label{ width:190px; flex-shrink:0; font-family:'IBM Plex Mono', monospace; font-size:12px; }
+  .trend-bar-bg{ flex:1; height:9px; background:var(--bg-raise); border:1px solid var(--line); border-radius:6px; overflow:hidden; }
+  .trend-bar-fill{ height:100%; background:linear-gradient(90deg, var(--sage), var(--amber)); }
+  .trend-count{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--amber); width:26px; text-align:right; }
+
+  .overlay{ position:fixed; inset:0; background:rgba(16,32,29,0.85); display:none; align-items:flex-start; justify-content:center; padding:40px 16px; overflow-y:auto; z-index:50; }
+  .overlay.open{ display:flex; }
+  .modal{ background:var(--paper); color:var(--ink); max-width:660px; width:100%; border-radius:var(--radius); padding:26px 26px 22px; }
+  .modal h3{ font-family:'Fraunces', serif; font-size:22px; margin:0 0 4px; }
+  .modal .sub{ font-size:12.5px; color:var(--ink-soft); margin-bottom:16px; }
+  .modal-section-label{ font-family:'IBM Plex Mono', monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--rust); margin:18px 0 8px; border-top:1px solid var(--line-paper); padding-top:14px; }
+  .modal-section-label:first-of-type{ border-top:none; margin-top:0; padding-top:0; }
+  .field{ margin-bottom:12px; }
+  .field label{ display:block; font-family:'IBM Plex Mono', monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-soft); margin-bottom:5px; }
+  .field input, .field textarea, .field select{ width:100%; border:1px solid var(--line-paper); background:var(--paper-dim); border-radius:var(--radius); padding:8px 10px; font-size:13px; color:var(--ink); }
+  .field textarea{ resize:vertical; min-height:44px; }
+  .two-col{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .four-col{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+  .modal-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:16px; }
+  .btn.dark{ background:var(--ink); color:var(--paper); }
+  .btn.dark:hover{ background:#333; }
+
+  .sanity-panel{ background:var(--bg-raise); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin-bottom:32px; display:none; }
+  .sanity-panel.open{ display:block; }
+  .sanity-panel h3{ font-family:'Fraunces', serif; font-size:18px; margin:0 0 10px; }
+  .sanity-issue{ background:var(--bg); border:1px solid var(--line); border-radius:var(--radius); padding:10px 12px; margin-bottom:8px; font-size:13px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+  .sanity-issue .txt b{ color:var(--amber); }
+  .sanity-clean{ color:var(--sage); font-family:'IBM Plex Mono', monospace; font-size:13px; }
+
+  footer{ margin-top:50px; padding-top:20px; border-top:1px solid var(--line); font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--cream-dim); line-height:1.7; }
+
+  @media (max-width:640px){ .brandrow{ flex-direction:column; } .ticker{ text-align:left; } .two-col,.four-col{ grid-template-columns:1fr 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brandrow">
+      <div>
+        <h1 class="brand"><span class="dot"></span>Signal Desk</h1>
+        <div class="tagline">Opportunity engine — every domain, ranked</div>
+      </div>
+      <div class="ticker" id="ticker">
+        <div><b id="tickerCount">0</b> opportunities logged</div>
+        <div id="tickerLast">no entries yet</div>
+      </div>
+    </div>
+    <div class="notice">
+      <strong>How daily updates actually work:</strong> a static page can't reach into Reddit/X/LinkedIn/GitHub on its own, and it can't write into this page's storage from the outside — there's no background process that can reach into your browser. What actually works: a scheduled daily research pass (if you've turned one on) produces a batch of new, sanity-checked opportunities as copy-paste-ready data. Paste that into <b>Import batch</b> below and it's added — never overwriting or deleting anything already here. Everything is kept permanently; archiving (not deleting) is the only way an item leaves the active view.
+    </div>
+  </header>
+
+  <div class="domain-browser">
+    <label for="domainJump">Browse a domain:</label>
+    <select id="domainJump"></select>
+    <button class="btn ghost small" id="jumpBtn">Show opportunities</button>
+  </div>
+
+  <div class="controls">
+    <input type="text" id="searchInput" placeholder="Or search across everything…">
+    <select id="statusFilter">
+      <option value="">All statuses</option>
+      <option>New</option><option>Watching</option><option>Pursuing</option><option>Archived</option>
+    </select>
+    <select id="sortBy">
+      <option value="composite">Sort: overall rank</option>
+      <option value="ai">Sort: AI potential</option>
+      <option value="sightings">Sort: most sighted</option>
+      <option value="recent">Sort: most recent</option>
+    </select>
+    <button class="btn ghost small" id="sanityBtn">Run sanity check</button>
+    <button class="btn ghost small" id="importBtn">Import batch</button>
+    <button class="btn" id="addBtn">+ Log an opportunity</button>
+  </div>
+
+  <div class="domain-browser" style="margin-bottom:20px;">
+    <label>View:</label>
+    <button class="btn ghost small" id="viewDomainBtn">By domain</button>
+    <button class="btn ghost small" id="viewDateBtn">By day (newest first)</button>
+    <select id="dateFilter" style="display:none; flex:1; min-width:200px;"></select>
+  </div>
+
+  <div class="stats" id="statsRow"></div>
+
+  <div class="sanity-panel" id="sanityPanel">
+    <h3>Sanity check results</h3>
+    <div id="sanityResults"></div>
+  </div>
+
+  <section id="topPicksSection">
+    <h2>Top picks right now</h2>
+    <div class="top-picks" id="topPicks"></div>
+  </section>
+
+  <div id="flatResults" style="display:none;">
+    <h2 style="font-family:'Fraunces',serif; font-size:20px;">Results</h2>
+    <div class="grid" id="flatGrid"></div>
+  </div>
+
+  <div id="groupedResults"></div>
+
+  <section>
+    <h2>Domain frequency</h2>
+    <div id="trendPanel"></div>
+  </section>
+
+  <footer>DATA STORED LOCALLY TO THIS PAGE · VISIBLE ONLY TO YOU · NOT SYNCED TO ANY EXTERNAL FEED</footer>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h3 id="modalTitle">Log an opportunity</h3>
+    <div class="sub">Fill in what you know — skip anything you're not sure of yet.</div>
+    <input type="hidden" id="editId">
+
+    <div class="modal-section-label">The problem</div>
+    <div class="two-col">
+      <div class="field"><label>Domain</label><select id="f-domain"></select></div>
+      <div class="field"><label>Title</label><input type="text" id="f-title"></div>
+    </div>
+    <div class="field"><label>Explain it in plain English</label><textarea id="f-plain"></textarea></div>
+    <div class="field"><label>Why it happens</label><textarea id="f-why"></textarea></div>
+    <div class="two-col">
+      <div class="field"><label>Who faces it</label><input type="text" id="f-who"></div>
+      <div class="field"><label>How often it appears (describe)</label><input type="text" id="f-frequencytext"></div>
+    </div>
+
+    <div class="modal-section-label">The fix</div>
+    <div class="two-col">
+      <div class="field"><label>Technical solution</label><textarea id="f-solutiontech"></textarea></div>
+      <div class="field"><label>Non-technical solution</label><textarea id="f-solutionnontech"></textarea></div>
+    </div>
+    <div class="field"><label>Skills you'd need to learn</label><textarea id="f-skills"></textarea></div>
+    <div class="field"><label>MVP to build first</label><textarea id="f-mvp"></textarea></div>
+    <div class="field"><label>Why this is worth pursuing (or not)</label><textarea id="f-whypursue"></textarea></div>
+    <div class="field"><label>A stronger direction (optional)</label><textarea id="f-claudetake"></textarea></div>
+
+    <div class="modal-section-label">Rank it (1 = weak, 5 = strong)</div>
+    <div class="four-col">
+      <div class="field"><label>Market demand</label><select id="f-demand"></select></div>
+      <div class="field"><label>How often it recurs</label><select id="f-freqscore"></select></div>
+      <div class="field"><label>Low competition</label><select id="f-competition"></select></div>
+      <div class="field"><label>Business potential</label><select id="f-bizpotential"></select></div>
+    </div>
+    <div class="four-col">
+      <div class="field"><label>AI potential</label><select id="f-aipotential"></select></div>
+      <div class="field"><label>Ease to build</label><select id="f-buildease"></select></div>
+      <div class="field"><label>Launch speed</label><select id="f-launchspeed"></select></div>
+      <div class="field"><label>Solo-founder fit</label><select id="f-solofit"></select></div>
+    </div>
+
+    <div class="modal-section-label">Tracking</div>
+    <div class="two-col">
+      <div class="field"><label>Status</label><select id="f-status"><option>New</option><option>Watching</option><option>Pursuing</option><option>Archived</option></select></div>
+      <div class="field"><label>Source</label><input type="text" id="f-source"></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn ghost" id="cancelBtn">Cancel</button>
+      <button class="btn dark" id="saveBtn">Save opportunity</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="importOverlay">
+  <div class="modal">
+    <h3>Import a batch</h3>
+    <div class="sub">Paste a JSON array of new opportunities (from a research digest). These are always <b>added</b> — nothing already here is changed, archived, or removed.</div>
+    <div class="field">
+      <textarea id="importText" style="min-height:220px; font-family:'IBM Plex Mono',monospace; font-size:12px;" placeholder='[{"domain":"Retail","title":"...","plain":"...","why":"...","who":"...","frequencyText":"...","solutionTech":"...","solutionNonTech":"...","skills":"...","mvp":"...","whyPursue":"...","demand":4,"freqscore":4,"competition":3,"bizpotential":4,"aipotential":3,"buildease":4,"launchspeed":4,"solofit":4,"source":"..."}]'></textarea>
+    </div>
+    <div id="importResult" style="font-size:12.5px; color:var(--ink-soft); margin-bottom:8px;"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="importCancelBtn">Close</button>
+      <button class="btn dark" id="importRunBtn">Add these opportunities</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'opportunities-v2';
+const DOMAIN_ORDER = ['AI','Healthcare','Education','Finance','Agriculture','Climate','Logistics','Manufacturing','Construction','Retail','Legal','Cybersecurity','GIS','Robotics','Gaming','Travel','Food','Real Estate','Energy','Social Impact','Productivity','Other'];
+const AXES = [
+  {key:'demand', label:'Market demand', weight:2},
+  {key:'freqscore', label:'Recurs often', weight:1.5},
+  {key:'competition', label:'Low competition', weight:1.5},
+  {key:'bizpotential', label:'Business potential', weight:2},
+  {key:'aipotential', label:'AI potential', weight:3},
+  {key:'buildease', label:'Ease to build', weight:1},
+  {key:'launchspeed', label:'Launch speed', weight:1},
+  {key:'solofit', label:'Solo-founder fit', weight:2}
+];
+const MAX_WEIGHT_SUM = AXES.reduce((a,x)=>a+x.weight,0) * 5;
+
+function composite(o){
+  const sum = AXES.reduce((a,x)=>a + (o[x.key]||3)*x.weight, 0);
+  return Math.round(sum / MAX_WEIGHT_SUM * 100);
+}
+
+const seedData = [
+  { id:'o1', domain:'AI', title:'AI tools forget you every single session',
+    plain:'Every time you start a new chat with an AI tool, it has no memory of you — your preferences, your project, your past conversations. You have to explain everything again from scratch.',
+    why:'Most AI chat tools don\'t save personal context between sessions by default — persistent memory is technically hard to do well and safely, and raises privacy questions.',
+    who:'Solo founders, consultants, and anyone using AI daily as a work tool.',
+    frequencyText:'Very common — the #1 complaint in a review of 500+ Reddit posts about AI tools, ahead of hallucination and cost.',
+    solutionTech:'A lightweight browser extension "memory layer" that stores a user\'s context locally and auto-injects it into any AI chat.',
+    solutionNonTech:'A templated "context primer" document users paste at the start of every session — sellable as a done-for-you setup.',
+    skills:'Browser extension development (JS), basic prompt engineering, local encryption/storage.',
+    mvp:'A Chrome extension: write a one-time "about me & my projects" profile, auto-paste it into any AI chat with one click.',
+    whyPursue:'Highest-frequency complaint in the entire AI space, and squarely an AI-native problem — buildable fast by one technical person.',
+    claudeTake:'',
+    demand:4, freqscore:5, competition:3, bizpotential:4, aipotential:5, buildease:3, launchspeed:4, solofit:5,
+    status:'New', source:'Indie Hackers analysis of 500 Reddit complaints', sightings:1, date:Date.now()-86400000*2, notes:'' },
+
+  { id:'o2', domain:'AI', title:'People stack 3–4 paid AI subscriptions to get one workflow done',
+    plain:'Because no single AI tool does everything well, people pay for ChatGPT AND Claude AND Perplexity AND Grammarly, then manually copy-paste between them.',
+    why:'Each tool is optimized for a different strength and none unify the workflow, so users patch the gaps together themselves.',
+    who:'Knowledge workers, students, professionals using AI daily.',
+    frequencyText:'Common — shows up repeatedly as a described "workflow" in AI discussion threads.',
+    solutionTech:'A lightweight router that sends one request to the right specialized model and returns one combined result.',
+    solutionNonTech:'A curated workflow guide teaching which tool to use for which step — sold as a template pack.',
+    skills:'API integration, prompt engineering — or for the guide version, strong writing/teaching skills.',
+    mvp:'Start with the non-technical guide to validate demand before writing any orchestration code.',
+    whyPursue:'Real pain, but big labs are converging on this themselves — best played as a fast, low-risk guide, not a moat.',
+    claudeTake:'Build the guide first, not the software.',
+    demand:3, freqscore:3, competition:2, bizpotential:3, aipotential:4, buildease:4, launchspeed:5, solofit:3,
+    status:'New', source:'AI tool discussion threads', sightings:1, date:Date.now()-86400000*4, notes:'' },
+
+  { id:'o3', domain:'Healthcare', title:'Confusing medical bills and insurance denials',
+    plain:'People get a denial letter with no clear reason and no clear path to challenge it — so most just give up and pay.',
+    why:'Insurers aren\'t required to explain denials in plain language, and appeals differ by insurer and state.',
+    who:'Anyone on U.S. private insurance, especially the chronically ill and older adults.',
+    frequencyText:'Very common — ~1 in 5 claims denied, yet under 0.2% of people ever appeal.',
+    solutionTech:'A tool that reads a denial letter and auto-drafts a tailored appeal with a deadline tracker.',
+    solutionNonTech:'A plain-English explainer hotline for a flat fee.',
+    skills:'Document OCR/parsing, legal-language templating, privacy-conscious data handling.',
+    mvp:'Upload your denial letter, answer 3 questions, get a ready-to-send appeal PDF — nothing stored after the session.',
+    whyPursue:'Appeals succeed most of the time, yet almost nobody files one — a rare case where the fix is simple and the upside per user is large.',
+    claudeTake:'',
+    demand:5, freqscore:5, competition:3, bizpotential:5, aipotential:4, buildease:2, launchspeed:2, solofit:3,
+    status:'New', source:'ProPublica / Commonwealth Fund', sightings:1, date:Date.now()-86400000*6, notes:'' },
+
+  { id:'o4', domain:'Education', title:'Teachers are burning out on admin work, not teaching',
+    plain:'Teachers spend hours a week on grading, paperwork, and documentation — often unpaid, at home — and it\'s the top reason they quit.',
+    why:'Schools keep adding required documentation without removing anything or adding time.',
+    who:'K-12 teachers.',
+    frequencyText:'Extremely common — ~half of teachers report frequent burnout; admin eats ~52% of teacher time (OECD).',
+    solutionTech:'A tool that turns a teacher\'s rough voice note into a finished parent email or behavior log in their own voice.',
+    solutionNonTech:'A shared bank of pre-written parent-communication phrases to customize.',
+    skills:'Basic LLM API integration, simple web app development, real conversations with teachers.',
+    mvp:'An app: record a 30-second voice note, get a polished, ready-to-send parent email.',
+    whyPursue:'Sell directly to individual teachers, not districts, and this becomes a fast, low-competition wedge into a very common pain.',
+    claudeTake:'Avoid district procurement as a solo founder — sell direct to teachers instead.',
+    demand:4, freqscore:5, competition:3, bizpotential:3, aipotential:4, buildease:4, launchspeed:4, solofit:4,
+    status:'New', source:'RAND / OECD TALIS 2026', sightings:1, date:Date.now()-86400000*3, notes:'' },
+
+  { id:'o5', domain:'Climate', title:'Small businesses pulled into carbon reporting they can\'t afford to do properly',
+    plain:'Small and mid-size businesses are increasingly asked by big customers, lenders, or new laws to report emissions — but the tools are built for large companies and cost too much.',
+    why:'New climate disclosure laws (e.g. California SB 253) and supply-chain pressure are cascading down faster than affordable small-business tools exist.',
+    who:'Small and mid-size business owners, especially suppliers to larger companies.',
+    frequencyText:'Growing fast — 2026 is described as the year this shifts from a "large company problem" to an "SME problem."',
+    solutionTech:'A simple, affordable carbon-estimate tool: plug in basic operational data, get a defensible, simplified emissions report.',
+    solutionNonTech:'A template + checklist consulting package walking an owner through a first estimate manually.',
+    skills:'Basic GHG Protocol understanding (learnable), simple web app or spreadsheet-tool building, clear explanatory writing.',
+    mvp:'A guided questionnaire (even a well-designed spreadsheet) turning basic operating data into a plain-English first carbon estimate.',
+    whyPursue:'Genuine regulatory tailwind, almost no one serving the small-business price point yet, and the methodology is learnable, not exotic.',
+    claudeTake:'This is the strongest pick in the batch.',
+    demand:4, freqscore:4, competition:5, bizpotential:5, aipotential:3, buildease:3, launchspeed:3, solofit:4,
+    status:'New', source:'Climate disclosure law coverage (SB 253/261, CSRD)', sightings:1, date:Date.now()-86400000*1, notes:'' },
+
+  { id:'o6', domain:'Finance', title:'Subscription cancellation dark patterns',
+    plain:'Companies make it easy to subscribe but deliberately hard to cancel — hidden buttons, guilt-trip messages, forced phone calls.',
+    why:'Companies profit directly from people forgetting to cancel or giving up mid-flow.',
+    who:'Nearly every household with streaming, SaaS, or gym subscriptions.',
+    frequencyText:'Very common — FTC gets 70,000+ complaints/year; 42% report a forgotten free-trial charge.',
+    solutionTech:'A browser extension that auto-generates a disposable payment card per subscription.',
+    solutionNonTech:'A "cancel it for me" concierge service — no engineering needed.',
+    skills:'For concierge: customer service and organization. For fintech: banking API integration.',
+    mvp:'A "send me your subscription list, I\'ll cancel the ones you don\'t want" concierge service.',
+    whyPursue:'Best treated as a fast, no-code concierge test — funded incumbents (Rocket Money) already own the fintech version.',
+    claudeTake:'Steer toward the concierge/service version, not the fintech app.',
+    demand:3, freqscore:4, competition:2, bizpotential:2, aipotential:2, buildease:4, launchspeed:5, solofit:4,
+    status:'Watching', source:'FTC complaint data', sightings:1, date:Date.now()-86400000*9, notes:'' },
+
+  { id:'o7', domain:'Agriculture', title:'Small farms are drowning in fragmented record-keeping',
+    plain:'Small farms juggle paper notebooks, spreadsheets, and compliance forms for everything from chemical use to labor hours — and none of it talks to each other.',
+    why:'Digital farm-management tools exist but are mostly built and priced for larger operations, so small farms default to fragmented manual systems.',
+    who:'Small and mid-size farm owners and operators.',
+    frequencyText:'Common — described as a near-universal small-farm struggle, worsened as more programs require digital submission.',
+    solutionTech:'A dead-simple mobile app covering just the essentials (labor, chemical use, harvest) built specifically for small operations.',
+    solutionNonTech:'A templated paper-to-digital transition service/consulting package for small farms.',
+    skills:'Mobile app development (offline-first), understanding of basic agricultural compliance needs.',
+    mvp:'A mobile app that lets a farmer log one type of record (e.g. labor hours or chemical applications) in under 10 seconds, with an export button for compliance forms.',
+    whyPursue:'Existing tools are built for larger operations — a genuinely simple, mobile-first version for small farms is still underserved.',
+    claudeTake:'',
+    demand:3, freqscore:4, competition:3, bizpotential:3, aipotential:3, buildease:4, launchspeed:4, solofit:4,
+    status:'New', source:'Farm management industry coverage', sightings:1, date:Date.now()-86400000*5, notes:'' },
+
+  { id:'o8', domain:'Cybersecurity', title:'Small businesses can\'t afford proper cybersecurity but can\'t skip it either',
+    plain:'Customers, insurers, and new laws increasingly require small businesses to have real cybersecurity in place — but the honest cost floor is far higher than most owners expect.',
+    why:'Cyber insurance, customer contracts, and state privacy laws are pushing basic security requirements down to small businesses faster than affordable, right-sized services exist.',
+    who:'Small manufacturers, professional services firms, and any small business handling customer data.',
+    frequencyText:'Common and growing — described as a recurring surprise for small business owners budgeting for the first time.',
+    solutionTech:'A guided self-assessment tool that benchmarks a small business against the specific controls insurers/customers actually ask for (MFA, EDR, backups) and prioritizes gaps.',
+    solutionNonTech:'A fractional/part-time security advisor service for businesses too small for a full-time hire.',
+    skills:'Cybersecurity fundamentals (learnable via certifications), understanding of cyber insurance questionnaires.',
+    mvp:'A simple online assessment: answer questions about current security practices, get a prioritized, plain-English gap list mapped to what insurers actually ask.',
+    whyPursue:'Real and growing budget line, but the buyer often needs ongoing hands-on help more than software alone — harder for a pure solo build.',
+    claudeTake:'',
+    demand:4, freqscore:4, competition:2, bizpotential:4, aipotential:3, buildease:2, launchspeed:2, solofit:2,
+    status:'New', source:'Small business cybersecurity cost research', sightings:1, date:Date.now()-86400000*8, notes:'' },
+
+  { id:'o9', domain:'Legal', title:'Small businesses are running on outdated, risky contract templates',
+    plain:'Contracts written a few years ago often contain clauses that no longer hold up — around AI use, remote work, or data protection — and most small businesses have no idea until something goes wrong.',
+    why:'Law changes faster than small businesses update their paperwork, and proper legal review is expensive enough that most skip it.',
+    who:'Small business owners without in-house legal counsel.',
+    frequencyText:'Common — legal commentary describes this as a near-universal issue for businesses using templates more than a couple of years old.',
+    solutionTech:'An AI tool that scans an existing contract and flags outdated or risky clauses in plain English, with suggested updated language.',
+    solutionNonTech:'A fixed-fee "contract check-up" service using a lawyer-reviewed checklist.',
+    skills:'Prompt engineering for document analysis, enough contract-law literacy to build a reliable checklist (partner with a lawyer for accuracy).',
+    mvp:'Upload a contract, get a plain-English list of outdated or missing clauses with suggested fixes — flagged clearly as informational, not legal advice.',
+    whyPursue:'A clean, well-scoped AI wedge into a market that usually requires an actual lawyer for even a first pass.',
+    claudeTake:'',
+    demand:3, freqscore:3, competition:3, bizpotential:3, aipotential:4, buildease:3, launchspeed:3, solofit:3,
+    status:'New', source:'Business contract law commentary, 2026', sightings:1, date:Date.now()-86400000*7, notes:'' },
+
+  { id:'o10', domain:'GIS', title:'The "last mile" of GIS: great analysis, no action',
+    plain:'GIS professionals produce excellent maps and analysis — but results often just sit in a report instead of leading to any actual decision.',
+    why:'Spatial analysis tools have gotten very good, but the layer connecting analysis to real workflows hasn\'t kept up.',
+    who:'GIS professionals in local government, public works, planning, emergency management.',
+    frequencyText:'Common and structural — described as a near-universal experience among practitioners.',
+    solutionTech:'A lightweight tool turning a finished GIS analysis directly into a trackable action — e.g. a public engagement map or an approval workflow.',
+    solutionNonTech:'A consulting service helping agencies redesign the handoff between GIS teams and decision-makers.',
+    skills:'GIS platform integration (ArcGIS/QGIS APIs), basic workflow/form-building, public-sector procurement literacy.',
+    mvp:'A plug-in for ArcGIS/QGIS that one-click generates a public engagement map or approval-tracking checklist from a finished analysis layer.',
+    whyPursue:'Low competition and a named, recognized gap — especially strong if you already have GIS domain credibility.',
+    claudeTake:'Worth a closer look given your GIS background — domain credibility matters a lot here.',
+    demand:3, freqscore:4, competition:5, bizpotential:3, aipotential:3, buildease:3, launchspeed:3, solofit:4,
+    status:'New', source:'GIS industry trade press', sightings:1, date:Date.now()-86400000*7, notes:'' },
+
+  { id:'o11', domain:'Real Estate', title:'Agents are paying $400+ per lead when their own database already has the answer',
+    plain:'Agents spend heavily on new online leads (often $400+ each) while thousands of old contacts already in their CRM — people who inquired 1–3 years ago — sit untouched.',
+    why:'New-lead buying is the default habit in the industry, and reaching back out to old contacts feels effortful and low-status compared to buying fresh leads.',
+    who:'Individual real estate agents and small brokerages.',
+    frequencyText:'Common — at least one company has built a paid service specifically around this exact insight, which validates the demand.',
+    solutionTech:'An automated tool that scans an agent\'s CRM, identifies contacts inactive 6+ months, and sends low-pressure check-in messages, surfacing only the ones who respond with interest.',
+    solutionNonTech:'A done-for-you "database reactivation" service, manually messaging an agent\'s old contact list on their behalf.',
+    skills:'CRM API integration, basic SMS/email automation, simple lead-scoring logic.',
+    mvp:'A tool that connects to an agent\'s CRM export, auto-sends a single low-pressure "still thinking about moving?" message to stale contacts, and reports back who said yes.',
+    whyPursue:'An existing company is already proving this model works — demand is validated, though you\'d need a differentiated angle to compete.',
+    claudeTake:'',
+    demand:4, freqscore:4, competition:2, bizpotential:4, aipotential:3, buildease:4, launchspeed:4, solofit:4,
+    status:'New', source:'Real estate industry coverage, 2026', sightings:1, date:Date.now()-86400000*10, notes:'' },
+
+  { id:'o12', domain:'Logistics', title:'Small sellers lose customers over shipping delays they don\'t communicate well',
+    plain:'When a shipment is delayed, small online sellers often either say nothing or send a vague "your order is delayed" message — and customers get frustrated and don\'t come back.',
+    why:'Small sellers don\'t have the tooling that larger retailers have to detect delays early and send specific, reassuring updates automatically.',
+    who:'Small e-commerce sellers and small businesses shipping physical goods.',
+    frequencyText:'Common — described as a recurring, avoidable cause of lost repeat customers in e-commerce logistics guides.',
+    solutionTech:'A tool that watches carrier tracking data, detects a likely delay early, and auto-sends a specific, honest update to the customer (not a generic one).',
+    solutionNonTech:'A done-for-you customer service template pack for handling delay communications well.',
+    skills:'Carrier API integration (USPS/UPS/FedEx tracking APIs), basic email/SMS automation.',
+    mvp:'A tool that connects to a seller\'s shipping platform and auto-sends a specific delay update ("held at customs, expected Friday") instead of a generic one.',
+    whyPursue:'A narrow, well-defined automation that plugs into tools small sellers already use.',
+    claudeTake:'',
+    demand:3, freqscore:4, competition:3, bizpotential:3, aipotential:3, buildease:4, launchspeed:4, solofit:4,
+    status:'New', source:'E-commerce logistics guides, 2026', sightings:1, date:Date.now()-86400000*11, notes:'' },
+
+  { id:'o13', domain:'Productivity', title:'Freelancers lose real time chasing late payments',
+    plain:'Freelancers finish the work, send the invoice, then spend hours emailing and calling just to get paid — sometimes waiting months.',
+    why:'There\'s often no real consequence for a client paying late, and freelancers rarely have leverage to enforce terms.',
+    who:'Freelance writers, designers, developers, consultants.',
+    frequencyText:'Very common — about 85% of freelancers report being paid late at least sometimes.',
+    solutionTech:'An automated tool acting as a firm, professional "collections" persona, escalating reminders and tracking a shared client payment-reputation score.',
+    solutionNonTech:'A plain-language contract/invoice template pack with built-in late-fee clauses.',
+    skills:'No-code automation (Zapier/Make), basic email API integration.',
+    mvp:'A tool that plugs into existing invoices and auto-sends professionally-worded reminders on schedule, plus an opt-in client payment-reputation lookup.',
+    whyPursue:'',
+    claudeTake:'',
+    demand:3, freqscore:5, competition:3, bizpotential:3, aipotential:2, buildease:4, launchspeed:4, solofit:4,
+    status:'New', source:'Freelancer forums / payment research', sightings:1, date:Date.now()-86400000*11, notes:'' },
+
+  { id:'o14', domain:'Productivity', title:'Parents are drowning in household "mental load"',
+    plain:'One parent ends up mentally tracking everything for the whole family, and it never really switches off.',
+    why:'Existing tools show tasks but don\'t decide what matters or who should do it, so planning still happens entirely in one person\'s head.',
+    who:'Dual-income parents, disproportionately mothers.',
+    frequencyText:'Very common — parents report ~30 hours/week coordinating family logistics.',
+    solutionTech:'A family coordination app that actively assigns tasks by who has capacity that day.',
+    solutionNonTech:'A weekly "family meeting" worksheet forcing both parents to divide tasks out loud.',
+    skills:'Mobile/web app development, notification systems, UX research with real parents.',
+    mvp:'A shared task board that assigns tasks between two parents based on a daily capacity check-in.',
+    whyPursue:'',
+    claudeTake:'I\'d validate this hard before building — marketing cost in crowded consumer apps usually decides survival, not the idea.',
+    demand:3, freqscore:4, competition:2, bizpotential:2, aipotential:2, buildease:3, launchspeed:3, solofit:3,
+    status:'Watching', source:'Parenting / caregiver research', sightings:1, date:Date.now()-86400000*15, notes:'' }
+];
+
+let opps = [];
+let editingId = null;
+let viewMode = 'domain'; // 'domain' | 'date'
+
+function dayKey(ts){
+  const d = new Date(ts);
+  return d.toLocaleDateString(undefined, {year:'numeric', month:'long', day:'numeric'});
+}
+function populateDateFilter(){
+  const days = [...new Set(opps.map(s=>dayKey(s.date)))];
+  days.sort((a,b)=>new Date(b)-new Date(a));
+  const sel = document.getElementById('dateFilter');
+  sel.innerHTML = '<option value="">All days</option>' + days.map(d=>`<option>${d}</option>`).join('');
+}
+
+function ratingOptions(){
+  return [1,2,3,4,5].map(n=>`<option value="${n}">${n}</option>`).join('');
+}
+// Patch the modal's rating <select> placeholders now that ratingOptions() exists
+document.addEventListener('DOMContentLoaded', ()=>{});
+window.addEventListener('load', ()=>{
+  document.querySelectorAll('#f-demand,#f-freqscore,#f-competition,#f-bizpotential,#f-aipotential,#f-buildease,#f-launchspeed,#f-solofit').forEach(sel=>{
+    sel.innerHTML = ratingOptions();
+  });
+});
+
+function populateDomainSelects(){
+  const opts = DOMAIN_ORDER.map(d=>`<option>${d}</option>`).join('');
+  document.getElementById('f-domain').innerHTML = opts;
+  document.getElementById('domainJump').innerHTML = '<option value="">— choose a domain —</option>' + opts;
+}
+
+async function loadOpps(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY, false);
+    opps = res && res.value ? JSON.parse(res.value) : null;
+  }catch(e){ opps = null; }
+  if(!opps || !opps.length){ opps = seedData; await persist(); }
+  populateDomainSelects();
+  populateDateFilter();
+  render();
+}
+async function persist(){
+  try{ await window.storage.set(STORAGE_KEY, JSON.stringify(opps), false); }
+  catch(e){ console.error('Storage save failed', e); }
+}
+
+function scoreColor(score){ if(score>=71) return 'var(--rust)'; if(score>=41) return 'var(--amber)'; return 'var(--sage)'; }
+function gaugeHTML(score){
+  const col = scoreColor(score);
+  return `<div class="gauge" style="background:conic-gradient(${col} ${score*3.6}deg, var(--paper-dim) 0deg)"><span style="color:${col}">${score}</span></div>`;
+}
+function timeAgo(ts){
+  const days = Math.floor((Date.now()-ts)/86400000);
+  if(days<=0) return 'today'; if(days===1) return '1 day ago'; if(days<30) return days+' days ago';
+  return Math.floor(days/30)+' mo ago';
+}
+
+function renderStats(){
+  const total = opps.length;
+  const high = opps.filter(s=>composite(s)>=71).length;
+  const pursuing = opps.filter(s=>s.status==='Pursuing').length;
+  const domainsCovered = new Set(opps.map(s=>s.domain)).size;
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat"><div class="num">${total}</div><div class="lbl">Opportunities logged</div></div>
+    <div class="stat"><div class="num">${high}</div><div class="lbl">High potential (71+)</div></div>
+    <div class="stat"><div class="num">${pursuing}</div><div class="lbl">Currently pursuing</div></div>
+    <div class="stat"><div class="num">${domainsCovered}/${DOMAIN_ORDER.length}</div><div class="lbl">Domains with entries</div></div>
+  `;
+  document.getElementById('tickerCount').textContent = total;
+  const latest = [...opps].sort((a,b)=>b.date-a.date)[0];
+  document.getElementById('tickerLast').textContent = latest ? 'last logged '+timeAgo(latest.date) : 'no entries yet';
+}
+
+function renderTopPicks(){
+  const active = opps.filter(s=>s.status!=='Archived');
+  const top = [...active].sort((a,b)=>composite(b)-composite(a)).slice(0,3);
+  document.getElementById('topPicks').innerHTML = top.map((s,i)=>`
+    <div class="pick-card">
+      <div class="rank">#${i+1} · ${s.domain} · score ${composite(s)}</div>
+      <h3>${s.title}</h3>
+      <div class="why">${s.whyPursue || s.claudeTake || s.plain}</div>
+    </div>
+  `).join('') || '<div class="empty">Log a few opportunities to see top picks.</div>';
+}
+
+function renderTrends(){
+  const counts = {};
+  opps.forEach(s=>{ counts[s.domain]=(counts[s.domain]||0)+1; });
+  const max = Math.max(...Object.values(counts), 1);
+  const ordered = DOMAIN_ORDER.filter(d=>counts[d]);
+  document.getElementById('trendPanel').innerHTML = ordered.map(d=>`
+    <div class="trend-row">
+      <div class="trend-label">${d}</div>
+      <div class="trend-bar-bg"><div class="trend-bar-fill" style="width:${(counts[d]/max*100)}%"></div></div>
+      <div class="trend-count">${counts[d]}</div>
+    </div>`).join('') || '<div class="empty">No opportunities yet.</div>';
+}
+
+function sortList(list){
+  const sortBy = document.getElementById('sortBy').value;
+  const copy = [...list];
+  if(sortBy==='composite') copy.sort((a,b)=>composite(b)-composite(a));
+  else if(sortBy==='ai') copy.sort((a,b)=>(b.aipotential||0)-(a.aipotential||0));
+  else if(sortBy==='sightings') copy.sort((a,b)=>(b.sightings||1)-(a.sightings||1));
+  else if(sortBy==='recent') copy.sort((a,b)=>b.date-a.date);
+  return copy;
+}
+function passesFilters(s,q,status){
+  const matchesQ = !q || (s.title+s.plain+s.why+s.mvp+s.domain).toLowerCase().includes(q);
+  const matchesStatus = !status || s.status===status;
+  return matchesQ && matchesStatus;
+}
+
+function cardHTML(s, showDomainTag){
+  const sc = composite(s);
+  return `
+  <div class="card" data-id="${s.id}">
+    <div class="card-top">
+      ${showDomainTag ? `<span class="domain-tag">${s.domain}</span>` : '<span></span>'}
+      ${gaugeHTML(sc)}
+    </div>
+    <h3>${s.title}</h3>
+    <p class="plain">${s.plain}</p>
+    <div class="axis-strip">
+      <span class="axis-chip"><b>AI</b> ${s.aipotential}/5</span>
+      <span class="axis-chip"><b>Biz</b> ${s.bizpotential}/5</span>
+      <span class="axis-chip"><b>Solo</b> ${s.solofit}/5</span>
+      <span class="axis-chip"><b>Low comp.</b> ${s.competition}/5</span>
+    </div>
+    <details class="brief">
+      <summary>View full brief</summary>
+      <div class="brief-body">
+        <div class="brief-item"><b>Why it happens</b><p>${s.why}</p></div>
+        <div class="brief-item"><b>Who faces it</b><p>${s.who}</p></div>
+        <div class="brief-item"><b>How often it appears</b><p>${s.frequencyText}</p></div>
+        <div class="brief-item"><b>Technical solution</b><p>${s.solutionTech}</p></div>
+        <div class="brief-item"><b>Non-technical solution</b><p>${s.solutionNonTech}</p></div>
+        <div class="brief-item"><b>Skills to learn</b><p>${s.skills}</p></div>
+        <div class="brief-item"><b>MVP to build first</b><p>${s.mvp}</p></div>
+        <div class="full-axes">
+          <div class="full-axis-row">Market demand <b>${s.demand}/5</b></div>
+          <div class="full-axis-row">Recurs often <b>${s.freqscore}/5</b></div>
+          <div class="full-axis-row">Low competition <b>${s.competition}/5</b></div>
+          <div class="full-axis-row">Business potential <b>${s.bizpotential}/5</b></div>
+          <div class="full-axis-row">AI potential <b>${s.aipotential}/5</b></div>
+          <div class="full-axis-row">Ease to build <b>${s.buildease}/5</b></div>
+          <div class="full-axis-row">Launch speed <b>${s.launchspeed}/5</b></div>
+          <div class="full-axis-row">Solo-founder fit <b>${s.solofit}/5</b></div>
+        </div>
+        ${s.whyPursue ? `<div class="brief-item"><b>Why it's worth pursuing</b><p>${s.whyPursue}</p></div>` : ''}
+        ${s.claudeTake ? `<div class="claude-take"><b>A stronger direction</b>${s.claudeTake}</div>` : ''}
+        <button class="notes-toggle" data-toggle-notes="${s.id}">Notes ${s.notes?'(saved)':''}</button>
+        <textarea class="notes-area" data-notes="${s.id}" placeholder="Your notes...">${s.notes||''}</textarea>
+      </div>
+    </details>
+    <div class="card-foot">
+      <select class="status-select" data-status="${s.id}">
+        <option ${s.status==='New'?'selected':''}>New</option>
+        <option ${s.status==='Watching'?'selected':''}>Watching</option>
+        <option ${s.status==='Pursuing'?'selected':''}>Pursuing</option>
+        <option ${s.status==='Archived'?'selected':''}>Archived</option>
+      </select>
+      <button class="sighting-btn" data-sighting="${s.id}">+1 sighting (${s.sightings||1})</button>
+      <div class="card-actions">
+        <button class="icon-btn" data-edit="${s.id}">Edit</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function render(){
+  renderStats();
+  renderTopPicks();
+  renderTrends();
+  populateDateFilter();
+
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const status = document.getElementById('statusFilter').value;
+  const dateSel = document.getElementById('dateFilter').value;
+  let filtered = opps.filter(s=>passesFilters(s,q,status));
+  if(dateSel) filtered = filtered.filter(s=>dayKey(s.date)===dateSel);
+
+  if(q || (viewMode==='date' && dateSel)){
+    document.getElementById('flatResults').style.display='block';
+    document.getElementById('groupedResults').style.display='none';
+    const list = sortList(filtered);
+    document.getElementById('flatGrid').innerHTML = list.length ? list.map(s=>cardHTML(s,true)).join('') : '<div class="empty">No opportunities match.</div>';
+  } else if(viewMode==='date'){
+    document.getElementById('flatResults').style.display='none';
+    document.getElementById('groupedResults').style.display='block';
+    const byDay = {};
+    filtered.forEach(s=>{ const k=dayKey(s.date); (byDay[k]=byDay[k]||[]).push(s); });
+    const orderedDays = Object.keys(byDay).sort((a,b)=>new Date(b)-new Date(a));
+    document.getElementById('groupedResults').innerHTML = orderedDays.map(day=>`
+      <div class="domain-section">
+        <div class="domain-head"><h2>${day}</h2><span class="count">${byDay[day].length} added</span></div>
+        <div class="grid">${sortList(byDay[day]).map(s=>cardHTML(s,true)).join('')}</div>
+      </div>
+    `).join('') || '<div class="empty">No opportunities yet.</div>';
+  } else {
+    document.getElementById('flatResults').style.display='none';
+    document.getElementById('groupedResults').style.display='block';
+    const byDomain = {};
+    filtered.forEach(s=>{ (byDomain[s.domain]=byDomain[s.domain]||[]).push(s); });
+    const ordered = DOMAIN_ORDER.filter(d=>byDomain[d] && byDomain[d].length);
+    document.getElementById('groupedResults').innerHTML = ordered.map(d=>`
+      <div class="domain-section">
+        <div class="domain-head"><h2>${d}</h2><span class="count">${byDomain[d].length}</span></div>
+        <div class="grid">${sortList(byDomain[d]).map(s=>cardHTML(s,false)).join('')}</div>
+      </div>
+    `).join('') || '<div class="empty">No opportunities yet. Log your first one, or browse a domain above.</div>';
+  }
+  attachCardEvents();
+}
+
+function jumpToDomain(){
+  const d = document.getElementById('domainJump').value;
+  if(!d) return;
+  document.getElementById('searchInput').value = '';
+  document.getElementById('statusFilter').value = '';
+  render();
+  const inDomain = opps.filter(s=>s.domain===d && s.status!=='Archived');
+  if(!inDomain.length){
+    document.getElementById('groupedResults').innerHTML = `<div class="empty">No opportunities logged yet for <b style="color:var(--amber)">${d}</b>. Ask me to research this domain, then log what I find here.</div>`;
+    return;
+  }
+  const el = document.querySelector(`.domain-section h2`);
+  document.querySelectorAll('.domain-section').forEach(sec=>{
+    if(sec.querySelector('h2').textContent === d){ sec.scrollIntoView({behavior:'smooth', block:'start'}); }
+  });
+}
+
+function attachCardEvents(){
+  document.querySelectorAll('[data-status]').forEach(el=>el.addEventListener('change', async e=>{
+    opps.find(s=>s.id===e.target.dataset.status).status = e.target.value; await persist(); render();
+  }));
+  document.querySelectorAll('[data-sighting]').forEach(el=>el.addEventListener('click', async e=>{
+    const sig = opps.find(s=>s.id===e.target.dataset.sighting);
+    sig.sightings=(sig.sightings||1)+1; sig.date=Date.now(); await persist(); render();
+  }));
+  document.querySelectorAll('[data-toggle-notes]').forEach(el=>el.addEventListener('click', e=>{
+    document.querySelector(`[data-notes="${e.target.dataset.toggleNotes}"]`).classList.toggle('open');
+  }));
+  document.querySelectorAll('[data-notes]').forEach(el=>el.addEventListener('blur', async e=>{
+    opps.find(s=>s.id===e.target.dataset.notes).notes = e.target.value; await persist();
+  }));
+  document.querySelectorAll('[data-edit]').forEach(el=>el.addEventListener('click', e=>openModal(e.target.dataset.edit)));
+}
+
+function openModal(id){
+  editingId = id || null;
+  if(id){
+    const s = opps.find(x=>x.id===id);
+    document.getElementById('modalTitle').textContent = 'Edit opportunity';
+    document.getElementById('f-domain').value = s.domain;
+    document.getElementById('f-title').value = s.title;
+    document.getElementById('f-plain').value = s.plain;
+    document.getElementById('f-why').value = s.why;
+    document.getElementById('f-who').value = s.who;
+    document.getElementById('f-frequencytext').value = s.frequencyText;
+    document.getElementById('f-solutiontech').value = s.solutionTech;
+    document.getElementById('f-solutionnontech').value = s.solutionNonTech;
+    document.getElementById('f-skills').value = s.skills;
+    document.getElementById('f-mvp').value = s.mvp;
+    document.getElementById('f-whypursue').value = s.whyPursue||'';
+    document.getElementById('f-claudetake').value = s.claudeTake||'';
+    document.getElementById('f-demand').value = s.demand;
+    document.getElementById('f-freqscore').value = s.freqscore;
+    document.getElementById('f-competition').value = s.competition;
+    document.getElementById('f-bizpotential').value = s.bizpotential;
+    document.getElementById('f-aipotential').value = s.aipotential;
+    document.getElementById('f-buildease').value = s.buildease;
+    document.getElementById('f-launchspeed').value = s.launchspeed;
+    document.getElementById('f-solofit').value = s.solofit;
+    document.getElementById('f-status').value = s.status;
+    document.getElementById('f-source').value = s.source||'';
+  } else {
+    document.getElementById('modalTitle').textContent = 'Log an opportunity';
+    ['f-title','f-plain','f-why','f-who','f-frequencytext','f-solutiontech','f-solutionnontech','f-skills','f-mvp','f-whypursue','f-claudetake','f-source'].forEach(fid=>document.getElementById(fid).value='');
+    document.getElementById('f-domain').value='AI';
+    ['f-demand','f-freqscore','f-competition','f-bizpotential','f-aipotential','f-buildease','f-launchspeed','f-solofit'].forEach(fid=>document.getElementById(fid).value='3');
+    document.getElementById('f-status').value='New';
+  }
+  document.getElementById('overlay').classList.add('open');
+}
+function closeModal(){ document.getElementById('overlay').classList.remove('open'); editingId=null; }
+
+async function saveOpp(){
+  const title = document.getElementById('f-title').value.trim();
+  if(!title){ alert('Give the opportunity a title.'); return; }
+  const data = {
+    domain: document.getElementById('f-domain').value,
+    title,
+    plain: document.getElementById('f-plain').value.trim(),
+    why: document.getElementById('f-why').value.trim(),
+    who: document.getElementById('f-who').value.trim(),
+    frequencyText: document.getElementById('f-frequencytext').value.trim(),
+    solutionTech: document.getElementById('f-solutiontech').value.trim(),
+    solutionNonTech: document.getElementById('f-solutionnontech').value.trim(),
+    skills: document.getElementById('f-skills').value.trim(),
+    mvp: document.getElementById('f-mvp').value.trim(),
+    whyPursue: document.getElementById('f-whypursue').value.trim(),
+    claudeTake: document.getElementById('f-claudetake').value.trim(),
+    demand: parseInt(document.getElementById('f-demand').value,10)||3,
+    freqscore: parseInt(document.getElementById('f-freqscore').value,10)||3,
+    competition: parseInt(document.getElementById('f-competition').value,10)||3,
+    bizpotential: parseInt(document.getElementById('f-bizpotential').value,10)||3,
+    aipotential: parseInt(document.getElementById('f-aipotential').value,10)||3,
+    buildease: parseInt(document.getElementById('f-buildease').value,10)||3,
+    launchspeed: parseInt(document.getElementById('f-launchspeed').value,10)||3,
+    solofit: parseInt(document.getElementById('f-solofit').value,10)||3,
+    status: document.getElementById('f-status').value,
+    source: document.getElementById('f-source').value.trim(),
+  };
+  if(editingId){ Object.assign(opps.find(s=>s.id===editingId), data); }
+  else { opps.push({ id:'o'+Date.now(), sightings:1, date:Date.now(), notes:'', ...data }); }
+  await persist(); closeModal(); render();
+}
+
+/* ---------- Sanity check ---------- */
+const STOPWORDS = new Set(['the','a','an','of','to','and','in','on','for','is','are','with','it','its','your','you','people','problem']);
+function wordsOf(str){ return new Set((str||'').toLowerCase().replace(/[^a-z0-9\s]/g,'').split(/\s+/).filter(w=>w && !STOPWORDS.has(w))); }
+function jaccard(a,b){ const inter=[...a].filter(x=>b.has(x)).length; const union=new Set([...a,...b]).size; return union===0?0:inter/union; }
+
+function runSanityCheck(){
+  const active = opps.filter(s=>s.status!=='Archived');
+  const issues = [];
+  for(let i=0;i<active.length;i++){
+    for(let j=i+1;j<active.length;j++){
+      if(jaccard(wordsOf(active[i].title), wordsOf(active[j].title)) >= 0.4){
+        issues.push({text:`"${active[i].title}" and "${active[j].title}" look similar — possible duplicate.`, ids:[active[i].id, active[j].id]});
+      }
+    }
+  }
+  active.forEach(s=>{
+    const missing = [];
+    if(!s.plain) missing.push('plain-English explanation');
+    if(!s.who) missing.push('who it affects');
+    if(!s.mvp) missing.push('an MVP idea');
+    if(missing.length) issues.push({text:`"${s.title}" is missing ${missing.join(', ')} — low-quality entry.`, ids:[s.id]});
+    if(composite(s) < 25) issues.push({text:`"${s.title}" scores under 25 overall — may not be worth keeping active.`, ids:[s.id]});
+  });
+  const panel = document.getElementById('sanityResults');
+  if(!issues.length){
+    panel.innerHTML = '<div class="sanity-clean">✓ No duplicates, incomplete entries, or unrealistic ideas found.</div>';
+  } else {
+    panel.innerHTML = issues.map(iss=>`
+      <div class="sanity-issue"><span class="txt">${iss.text}</span>
+      <button class="btn ghost small" data-archive-ids="${iss.ids.join(',')}">Archive flagged</button></div>
+    `).join('');
+    panel.querySelectorAll('[data-archive-ids]').forEach(btn=>btn.addEventListener('click', async e=>{
+      e.target.dataset.archiveIds.split(',').forEach(id=>{ const s=opps.find(x=>x.id===id); if(s) s.status='Archived'; });
+      await persist(); render(); runSanityCheck();
+    }));
+  }
+  document.getElementById('sanityPanel').classList.add('open');
+}
+
+document.getElementById('sanityBtn').addEventListener('click', runSanityCheck);
+document.getElementById('addBtn').addEventListener('click', ()=>openModal(null));
+document.getElementById('cancelBtn').addEventListener('click', closeModal);
+document.getElementById('saveBtn').addEventListener('click', saveOpp);
+document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id==='overlay') closeModal(); });
+document.getElementById('searchInput').addEventListener('input', render);
+document.getElementById('statusFilter').addEventListener('change', render);
+document.getElementById('sortBy').addEventListener('change', render);
+document.getElementById('jumpBtn').addEventListener('click', jumpToDomain);
+
+document.getElementById('viewDomainBtn').addEventListener('click', ()=>{
+  viewMode='domain'; document.getElementById('dateFilter').style.display='none';
+  document.getElementById('dateFilter').value=''; render();
+});
+document.getElementById('viewDateBtn').addEventListener('click', ()=>{
+  viewMode='date'; document.getElementById('dateFilter').style.display='inline-block'; render();
+});
+document.getElementById('dateFilter').addEventListener('change', render);
+
+/* ---------- Import batch ---------- */
+function openImportModal(){
+  document.getElementById('importOverlay').classList.add('open');
+  document.getElementById('importResult').textContent = '';
+}
+function closeImportModal(){ document.getElementById('importOverlay').classList.remove('open'); }
+
+async function runImport(){
+  const raw = document.getElementById('importText').value.trim();
+  const resultEl = document.getElementById('importResult');
+  if(!raw){ resultEl.textContent = 'Paste a JSON array of opportunities first.'; return; }
+  let items;
+  try{ items = JSON.parse(raw); if(!Array.isArray(items)) throw new Error('not an array'); }
+  catch(e){ resultEl.textContent = 'Could not parse that as a JSON array — check the format and try again.'; return; }
+
+  let added = 0;
+  items.forEach(it=>{
+    if(!it.title) return;
+    opps.push({
+      id: 'o'+Date.now()+Math.random().toString(36).slice(2,7),
+      domain: it.domain || 'Other',
+      title: it.title,
+      plain: it.plain || '',
+      why: it.why || '',
+      who: it.who || '',
+      frequencyText: it.frequencyText || it.frequency || '',
+      solutionTech: it.solutionTech || '',
+      solutionNonTech: it.solutionNonTech || '',
+      skills: it.skills || '',
+      mvp: it.mvp || '',
+      whyPursue: it.whyPursue || '',
+      claudeTake: it.claudeTake || '',
+      demand: it.demand || 3, freqscore: it.freqscore || 3, competition: it.competition || 3,
+      bizpotential: it.bizpotential || 3, aipotential: it.aipotential || 3,
+      buildease: it.buildease || 3, launchspeed: it.launchspeed || 3, solofit: it.solofit || 3,
+      status: 'New', source: it.source || '', sightings: 1,
+      date: it.date || Date.now(), notes: ''
+    });
+    added++;
+  });
+  await persist();
+  populateDomainSelects();
+  resultEl.textContent = `Added ${added} new opportunit${added===1?'y':'ies'} — nothing existing was changed or removed.`;
+  render();
+}
+
+document.getElementById('importBtn').addEventListener('click', openImportModal);
+document.getElementById('importCancelBtn').addEventListener('click', closeImportModal);
+document.getElementById('importRunBtn').addEventListener('click', runImport);
+document.getElementById('importOverlay').addEventListener('click', e=>{ if(e.target.id==='importOverlay') closeImportModal(); });
+
+loadOpps();
+</script>
+</body>
+</html>
